@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flask App</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3f6fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #0f766e;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: Segoe UI, Tahoma, sans-serif;
+      background: radial-gradient(circle at top right, #dbeafe, var(--bg));
+      color: var(--text);
+      padding: 24px;
+    }
+
+    .card {
+      width: min(680px, 100%);
+      background: var(--card);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.1);
+      border: 1px solid #e5e7eb;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(1.8rem, 3vw, 2.6rem);
+      line-height: 1.1;
+      color: #111827;
+    }
+
+    p {
+      margin: 8px 0;
+      font-size: 1rem;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .time {
+      margin-top: 18px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Rozvrh učebny</h1>
+    <p><strong>ID učebny:</strong> {{ room_id }}</p>
+    <p class="time">Aktuální čas: {{ now.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+    {% if rozvrh %}
+    <table>
+      <tr>
+        <th>Od</th>
+        <th>Do</th>
+        <th>Předmět</th>
+        <th>Vyučující</th>
+      </tr>
+      {% for hodina in rozvrh %}
+      <tr> 
+        <td{% if hodina.canceled %} style="text-decoration: line-through; color: #888;"{% endif %}>
+          {% if hodina.canceled and (hodina.od == '??:??' or not hodina.od) %}---{% else %}{{ hodina.od }}{% endif %}
+        </td>
+        <td{% if hodina.canceled %} style="text-decoration: line-through; color: #888;"{% endif %}>
+          {% if hodina.canceled and (hodina.do == '??:??' or not hodina.do) %}---{% else %}{{ hodina.do }}{% endif %}
+        </td>
+        <td{% if hodina.canceled %} style="text-decoration: line-through; color: #888;"{% endif %}>{{ hodina.nazev }}</td>
+        <td{% if hodina.canceled %} style="text-decoration: line-through; color: #888;"{% endif %}>{{ hodina.vyucujici }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <p>Žádné hodiny nejsou k dispozici.</p>
+    {% endif %}
+
+    {% if api_json %}
+    <h2>Debug: Surový JSON z API</h2>
+    <pre>{{ api_json | tojson(indent=2) }}</pre>
+    {% endif %}
+  </main>
+</body>
+</html>

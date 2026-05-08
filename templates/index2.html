@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flask App</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f3f6fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #0f766e;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: Segoe UI, Tahoma, sans-serif;
+      background: radial-gradient(circle at top right, #dbeafe, var(--bg));
+      color: var(--text);
+      padding: 24px;
+    }
+
+    .card {
+      width: min(680px, 100%);
+      background: var(--card);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.1);
+      border: 1px solid #e5e7eb;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(1.8rem, 3vw, 2.6rem);
+      line-height: 1.1;
+      color: #111827;
+    }
+
+    p {
+      margin: 8px 0;
+      font-size: 1rem;
+      line-height: 1.6;
+      color: var(--muted);
+    }
+
+    .time {
+      margin-top: 18px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Flask app bezi asi 2</h1>
+    <p>Tohle je zakladni stranka renderovana pres Jinja sablonu.</p>
+    <p class="time">Server time: {{ now.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+  </main>
+</body>
+</html>
