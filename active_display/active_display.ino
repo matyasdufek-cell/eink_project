@@ -139,6 +139,20 @@ void loop() {
     // Uspíme displej (šetří energii a hardware)
     powerOffCOG(); 
   }
+  else {
+    WiFiManager wfm;
+    WiFiManagerParameter room_id_box("room_id", "room ID", "", 4);
+    wfm.addParameter(&room_id_box);
+
+    bool res;
+      res = wfm.autoConnect("eink_display");
+      if(!res) {
+        Serial.println("\nFailed to connect.");
+      }
+    
+    Serial.print("room ID:");
+    Serial.println(room_id_box.getValue());
+  }
 
   Serial.println("Cekam 5 minut...");
   delay(300000);
