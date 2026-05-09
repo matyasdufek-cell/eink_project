@@ -2,11 +2,9 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiClient.h>
+#include <WiFiManager.h>
 #include "display_functions.h"
 
-// --- KONFIGURACE ---
-const char* ssid = "Maty";//"GKREN_STUDENT";
-const char* password = "Pm369258";//"g.stud.123";
 
 // ZDE DOPLŇ SVOJE URL ADRESY
 const char* url_black = "http://192.168.0.188:5000/download/black_binary.bin";//"http://10.1.198.124:5000/download/black_binary.bin";
@@ -23,38 +21,6 @@ const char* url_red   = "http://192.168.0.188:5000/download/red_binary.bin";//"h
 //uint8_t* image_red   = NULL;
 
 // --- POMOCNÉ FUNKCE ---
-
-// Funkce pro stažení binárních dat přímo do alokovaného bufferu
-/*
-bool downloadToBuffer(const char* url, uint8_t* buffer, size_t size) {
-  if (WiFi.status() != WL_CONNECTED) return false;
-
-  WiFiClient client; // Vytvořit lokálního klienta
-  HTTPClient http;
-  http.begin(client, url);
-  http.setTimeout(15000); // 15 sekund timeout pro pomalejší servery
-  
-  int httpCode = http.GET();
-  if (httpCode == HTTP_CODE_OK) {
-    int len = http.getSize();
-    if (len > 0 && len != size) {
-      Serial.printf("Varovani: Velikost na webu (%d) neodpovida ocekavani (%d)\n", len, size);
-    }
-    
-    WiFiClient* stream = http.getStreamPtr();
-    // Čtení dat přímo do naší RAM
-    int readLen = stream->readBytes(buffer, size);
-    
-    http.end();
-    Serial.printf("Stazeno %d bajtu z URL.\n", readLen);
-    return (readLen > 0);
-  } else {
-    Serial.printf("HTTP Chyba (%d): %s\n", httpCode, http.errorToString(httpCode).c_str());
-    http.end();
-    return false;
-  }
-}
-*/
 
 // Pomocná funkce pro streamování dat přímo do displeje
 bool streamToDisplay(const char* url, uint8_t command, bool invert) {
@@ -99,33 +65,7 @@ bool streamToDisplay(const char* url, uint8_t command, bool invert) {
   }
   return false;
 }
-/*
-// Funkce pro odeslání dat do displeje
-void vykresliObrazek(const uint8_t* blackData, const uint8_t* redData) {
-  uint8_t duw[]   = { 0x00, 0x3b, 0x00, 0x00, 0x1f, 0x03 };
-  uint8_t drfw[]  = { 0x00, 0x3b, 0x00, 0xc9 };
-  uint8_t ram_rw[] = { 0x3b, 0x00, 0x14 };
 
-  Serial.println("Posilam data do RAM displeje...");
-  
-  sendIndexData(0x13, duw, 6);
-  sendIndexData(0x90, drfw, 4);
-
-  // Černá vrstva
-  sendIndexData(0x12, ram_rw, 3);
-  sendIndexData(0x10, blackData, REQUIRED_SIZE);
-
-  // Červená vrstva
-  sendIndexData(0x12, ram_rw, 3);
-  sendIndexData(0x11, redData, REQUIRED_SIZE);
-
-  Serial.println("Aktivuji prekresleni (Refresh)...");
-  initCOG();
-  refreshDisplay();
-  //powerOffCOG(); 
-  Serial.println("Displej aktualizovan.");
-}
-*/
 
 void vykresliObrazek(const char* urlBlack, const char* urlRed) {
   // 1. Černá data (Registr 0x24)
@@ -151,17 +91,23 @@ void vykresliObrazek(const char* urlBlack, const char* urlRed) {
 // --- HLAVNÍ PROGRAM ---
 
 void setup() {
+  WiFi.mode(WIFI_STA);
   Serial.begin(115200);
   delay(1000);
+
+  WiFiManager wfm;
+  WiFiManagerParameter room_id_box("room_id", "room ID", "", 4);
+  wfm.addParameter(&room_id_box);
+
+  bool res;
+    res = wfm.autoConnect("eink_display");
+    if(!res) {
+      Serial.println("\nFailed to connect.");
+    }
   
-  // 2. Připojení k WiFi
-  WiFi.begin(ssid, password);
-  Serial.print("Pripojuji WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("\nWiFi OK!");
+  Serial.print("room ID:");
+  Serial.println(room_id_box.getValue());
+  
 
   // 3. Inicializace HW pinů a SPI
   pinMode(POWER, OUTPUT);
@@ -180,41 +126,6 @@ void setup() {
 }
 
 void loop() {
-  /*
-  Serial.println("\n--- Kontrola aktualizace ---");
- 
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    
-    
-
-
-    // Stáhneme data ze serveru
-    bool successBlack = downloadToBuffer(url_black, image_black, REQUIRED_SIZE);
-    bool successRed   = downloadToBuffer(url_red, image_red, REQUIRED_SIZE);
-
-    if (successBlack && successRed) {
-      // Pokud se stažení povedlo, probudíme displej a vykreslíme
-      digitalWrite(POWER, HIGH);
-      delay(50);
-      resetDisplay();
-      
-      vykresliObrazek(image_black, image_red);
-      
-      // Po vykreslení můžeme (volitelně) vypnout napájení pro šetření
-      // digitalWrite(POWER, LOW); 
-    } else {
-      Serial.println("Chyba stahovani, zkusim to v dalsim cyklu.");
-    }
-  } else {
-    Serial.println("WiFi ztraceno, pripojuji znovu...");
-    WiFi.begin(ssid, password);
-  }
-
-  // Čekání 30 sekund
-  Serial.println("Cekam 30 sekund na dalsi kontrolu...");
-  delay(30000); 
-  */
   Serial.println("\n--- Kontrola aktualizace ---");
 
   if (WiFi.status() == WL_CONNECTED) {
