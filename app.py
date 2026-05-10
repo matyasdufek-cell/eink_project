@@ -40,8 +40,8 @@ def home() -> str:
 
     return jsonify(response.json()), response.status_code
 
-@app.route("/rozvrh")
-def rozvrh():
+@app.route("/rozvrh/<room_id>")
+def rozvrh(room_id):
     domain = "gymkren"
     username = "apiuser2"
     password = "4616t5s55x53qpe2jt62yfode14hfxon3uvpdok8"
@@ -49,7 +49,7 @@ def rozvrh():
 
     today = date.today().strftime('%Y-%m-%d')
     test_today = date(2026, 4, 29).strftime('%Y-%m-%d')  # pro testování s fixním datem
-    room_id = request.args.get("room_id", "20")
+    room_id = request.args.get("room_id", room_id)
     full_url = f"{url}?date={today}&room_id={room_id}"
 
     rozvrh = []
@@ -295,8 +295,8 @@ def rozvrh():
         test_now=test_now,
     )
 
-@app.route("/download/<filename>", methods=["GET"])
-def download(filename):
+@app.route("/download/<room_id>/<filename>", methods=["GET"])
+def download(filename, room_id):
     domain = "gymkren"
     username = "apiuser2"
     password = "4616t5s55x53qpe2jt62yfode14hfxon3uvpdok8"
@@ -304,7 +304,7 @@ def download(filename):
 
     today = date.today().strftime('%Y-%m-%d')
     test_today = date(2026, 4, 29).strftime('%Y-%m-%d')  # pro testování s fixním datem
-    room_id = request.args.get("room_id", "20")
+    room_id = request.args.get("room_id", room_id)
     full_url = f"{url}?date={today}&room_id={room_id}"
 
     rozvrh = []

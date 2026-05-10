@@ -7,20 +7,14 @@
 
 
 // ZDE DOPLŇ SVOJE URL ADRESY
-const char* url_black = "http://192.168.0.188:5000/download/black_binary.bin";//"http://10.1.198.124:5000/download/black_binary.bin";
-const char* url_red   = "http://192.168.0.188:5000/download/red_binary.bin";//"http://10.1.198.124:5000/download/red_binary.bin";
-
+String url_black_str = "";
+String url_red_str = "";
 
 // --- GLOBÁLNÍ PROMĚNNÉ ---
 // Definujeme paměť pro obrázky a velikost
 #ifndef REQUIRED_SIZE
   #define REQUIRED_SIZE 15000  // 480x800 px / 8
 #endif
-
-//uint8_t* image_black = NULL;
-//uint8_t* image_red   = NULL;
-
-// --- POMOCNÉ FUNKCE ---
 
 // Pomocná funkce pro streamování dat přímo do displeje
 bool streamToDisplay(const char* url, uint8_t command, bool invert) {
@@ -105,9 +99,12 @@ void setup() {
       Serial.println("\nFailed to connect.");
     }
   
-  Serial.print("room ID:");
-  Serial.println(room_id_box.getValue());
-  
+  String roomID = String(room_id_box.getValue());
+  Serial.print("room ID: ");
+  Serial.println(roomID);
+
+  url_black_str = "http://192.168.0.188:5000/download/" + roomID + "/black_binary.bin";//"http://10.1.198.124:5000/download/" + roomID + "/black_binary.bin";
+  url_red_str = "http://192.168.0.188:5000/download/" + roomID + "/red_binary.bin";//"http://10.1.198.124:5000/download/" + roomID + "/red_binary.bin";
 
   // 3. Inicializace HW pinů a SPI
   pinMode(POWER, OUTPUT);
@@ -134,7 +131,7 @@ void loop() {
     initCOG(); 
 
     // Spustíme streamování a vykreslení
-    vykresliObrazek(url_black, url_red);
+    vykresliObrazek(url_black_str.c_str(), url_red_str.c_str());
 
     // Uspíme displej (šetří energii a hardware)
     powerOffCOG(); 
