@@ -1,8 +1,8 @@
 from PIL import Image, ImageDraw, ImageFont
-import io
 
-def create_schedule(width, height, classroom, students_class, lesson_start_time, lesson_end_time, subject, teacher, current_time, list_next_lessons):
+def create_schedule(width, height, classroom, students_class, lesson_start_time, lesson_end_time, subject, teacher, current_time, battery, list_next_lessons):
     row_height = 22
+    battery_height = round(battery / 10)
     image = Image.new("RGB", (width, height), (255, 255, 255))
     draw = ImageDraw.Draw(image)
 
@@ -35,13 +35,11 @@ def create_schedule(width, height, classroom, students_class, lesson_start_time,
     for i, lesson in enumerate(list_next_lessons):
         following_lesson(0, 140 + i * row_height, f"{lesson[0]} - {lesson[1]}", lesson[2], lesson[3], lesson[4], lesson[5])
     
-    draw.text((width - 50, height - 20), current_time, font = small_text, fill = (0, 0, 0))
+    draw.text((width - 55, height - 20), current_time, font = small_text, fill = (0, 0, 0))
 
-    # Instead of saving to file, return bytes
-    """img_io = io.BytesIO()
-    image.save(img_io, 'PNG')
-    img_io.seek(0)
-    return img_io.getvalue()"""
+    draw.rectangle((width - 7, height - 15, width - 2, height - 5), outline = "red", width = 1)
+    draw.rectangle((width - 7, height - 15 + (10 - battery_height), width - 2, height - 5), fill = "red")
+
     image.save("schedule_image.png")
 
 def wbr_colors(source_image):

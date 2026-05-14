@@ -48,7 +48,6 @@ def rozvrh(room_id):
     url = f"https://{domain}.edookit.net/api/lesson/v2/list-lessons"
 
     today = date.today().strftime('%Y-%m-%d')
-    test_today = date(2026, 4, 29).strftime('%Y-%m-%d')  # pro testování s fixním datem
     room_id = request.args.get("room_id", room_id)
     full_url = f"{url}?date={today}&room_id={room_id}"
 
@@ -295,15 +294,14 @@ def rozvrh(room_id):
         test_now=test_now,
     )
 
-@app.route("/download/<room_id>/<filename>", methods=["GET"])
-def download(filename, room_id):
+@app.route("/download/<room_id>/<battery>/<filename>", methods=["GET"])
+def download(filename, room_id, battery):
     domain = "gymkren"
     username = "apiuser2"
     password = "4616t5s55x53qpe2jt62yfode14hfxon3uvpdok8"
     url = f"https://{domain}.edookit.net/api/lesson/v2/list-lessons"
 
     today = date.today().strftime('%Y-%m-%d')
-    test_today = date(2026, 4, 29).strftime('%Y-%m-%d')  # pro testování s fixním datem
     room_id = request.args.get("room_id", room_id)
     full_url = f"{url}?date={today}&room_id={room_id}"
 
@@ -403,6 +401,8 @@ def download(filename, room_id):
     except ValueError:
         searched_room_id = None
 
+    full_rozvrh = []
+
     for lesson in lessons_iter:
         if not isinstance(lesson, dict):
             continue
@@ -449,7 +449,7 @@ def download(filename, room_id):
                 elif same_time and same_room:
                     status = "aktualni"
 
-        rozvrh.append(
+        full_rozvrh.append(
             {
                 "plan": {
                     "od": od_plan,
@@ -480,10 +480,91 @@ def download(filename, room_id):
             }
         )
 
+        if status not in ["zruseno", "presunuto_do"]:
+            rozvrh.append(
+                {
+                    "plan": {
+                        "od": od_plan,
+                        "od_full": od_plan_full,
+                        "do": do_plan,
+                        "ucitel": ucitel_plan,
+                        "mistnost_id": mistnost_id_plan,
+                        "mistnost": mistnost_plan,
+                        "kurz": kurz_plan,
+                    },
+                    "actual": {
+                        "od": od_act,
+                        "od_full": od_act_full,
+                        "do": do_act,
+                        "ucitel": ucitel_act,
+                        "mistnost_id": mistnost_id_act,
+                        "mistnost": mistnost_act,
+                        "kurz": kurz_act,
+                    },
+                    "trida": trida,
+                    "kurz": kurz_top,
+                    "status": status,
+                    "od": od_act if od_act != "??:??" else od_plan,
+                    "do": do_act if do_act != "??:??" else do_plan,
+                    "predmet": kurz_top,
+                    "ucitel": ucitel_act if ucitel_act != "?" else ucitel_plan,
+                    "preskrtnout": status in {"presunuto_do", "zruseno"},
+                }
+            )
+
+    lesson_start_times = ["00:00", "07:15", "08:05", "09:00", "10:00", "10:55", "11:50", "12:40", "13:35", "14:30", "15:20", "16:06"]
+    lesson_end_times = ["07:00", "08:00", "08:50", "09:45", "10:45", "11:40", "12:35", "13:25", "14:20", "15:15", "16:05", "23:59"]
+    for start, end in zip(lesson_start_times, lesson_end_times):
+        if not any(l["od"] == start and l["do"] == end for l in rozvrh):
+            rozvrh.append(
+                {
+                    "plan": {
+                        "od": start,
+                        "do": end,
+                        "ucitel": "-",
+                        "mistnost_id": rozvrh[0]["plan"]["mistnost_id"] if rozvrh else None,
+                        "mistnost": rozvrh[0]["plan"]["mistnost"] if rozvrh else "?",
+                        "kurz": "volno",
+                    },
+                    "actual": {
+                        "od": start,
+                        "do": end,
+                        "ucitel": "-",
+                        "mistnost_id": rozvrh[0]["actual"]["mistnost_id"] if rozvrh else None,
+                        "mistnost": rozvrh[0]["actual"]["mistnost"] if rozvrh else "?",
+                        "kurz": "volno",
+                    },
+                    "trida": "-",
+                    "kurz": "volno",
+                    "status": "neznamy",
+                    "od": start,
+                    "do": end,
+                    "predmet": "volno",
+                    "ucitel": "-",
+                    "poznamka": "",
+                }
+            )
+
     # seřadit podle plánovaného začátku
     rozvrh.sort(key=lambda x: x["plan"]["od"])
+    full_rozvrh.sort(key=lambda x: x["plan"]["od"])
 
     for polozka in rozvrh:
+        status = polozka["status"]
+        if status == "zruseno":
+            polozka["poznamka"] = "zrušeno"
+        elif status == "presunuto_do":
+            nova_ucebna = polozka["actual"]["mistnost"]
+            polozka["poznamka"] = f"přes. do {nova_ucebna}"
+        elif status == "presunuto_z":
+            puvodni_ucebna = polozka["plan"]["mistnost"]
+            polozka["poznamka"] = f"přes. z {puvodni_ucebna}"
+        elif status == "suplovani":
+            polozka["poznamka"] = "suplování"
+        else:
+            polozka["poznamka"] = ""
+
+    for polozka in full_rozvrh:
         status = polozka["status"]
         if status == "zruseno":
             polozka["poznamka"] = "zrušeno"
@@ -505,7 +586,7 @@ def download(filename, room_id):
             and start_minutes <= now_minutes < end_minutes
         )
 
-    test_now = datetime.now()#.replace(hour=6, minute=0)  # pro testování s fixním časem
+    test_now = datetime.now()
     test_now_minutes = test_now.hour * 60 + test_now.minute
     nejblizsi_hodina = None
     nejmensi_rozdil = None
@@ -532,7 +613,7 @@ def download(filename, room_id):
             if nejmensi_rozdil is None or rozdil < nejmensi_rozdil:
                 nejmensi_rozdil = rozdil
                 nejblizsi_hodina = polozka
-
+            
         if end_minutes is not None and (konec_vyuky_minutes is None or end_minutes > konec_vyuky_minutes):
             konec_vyuky_minutes = end_minutes
             konec_vyuky = end_time
@@ -543,11 +624,36 @@ def download(filename, room_id):
         return "No lessons found", 404
 
     # Find current lesson (nejblizsi_hodina) or first lesson
-    current_lesson = nejblizsi_hodina if nejblizsi_hodina else rozvrh[0]
+    current_lesson = nejblizsi_hodina if nejblizsi_hodina is not None else rozvrh[0]
 
     # Find next lessons for the rest of the day
-    current_index = rozvrh.index(current_lesson) if current_lesson in rozvrh else 0
-    next_lessons = rozvrh[current_index + 1:]
+    current_index_full = next(
+        (
+            i
+            for i, l in enumerate(full_rozvrh)
+            if l["plan"] == current_lesson["plan"]
+            and l["actual"] == current_lesson["actual"]
+            and l["status"] == current_lesson["status"]
+            and l["od"] == current_lesson["od"]
+            and l["do"] == current_lesson["do"]
+        ),
+        None,
+    )
+    if current_index_full is None:
+        if current_lesson["kurz"] == "volno":
+            for i, hodina in enumerate(full_rozvrh):
+                if hodina["od"] >= current_lesson["od"]:
+                    current_index_full = i - 1
+                    break
+        else:
+            current_index_full = next(
+                (i for i, l in enumerate(full_rozvrh) if l["od"] == current_lesson["od"] and l["status"] == current_lesson["status"]),0     
+            )
+    
+    try:    
+        next_lessons = full_rozvrh[current_index_full + 1:]
+    except TypeError:
+        next_lessons = []
 
     # Prepare list_next_lessons for all following lessons
     list_next_lessons = [
@@ -576,14 +682,13 @@ def download(filename, room_id):
         subject=current_lesson["predmet"],
         teacher=current_lesson["ucitel"],
         current_time=test_now.strftime("%H:%M"),
+        battery=int(battery),
         list_next_lessons=list_next_lessons
     )
     wbr_colors("schedule_image.png")
     get_binary_files("schedule_image.png")
 
     return send_from_directory(UPLOAD_FOLDER, filename)
-
-    #return send_file(io.BytesIO(image_bytes), mimetype='image/png', as_attachment=True, download_name='schedule.png')
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)

@@ -10,14 +10,10 @@
 String url_black_str = "";
 String url_red_str = "";
 
-// --- GLOBÁLNÍ PROMĚNNÉ ---
-// Definujeme paměť pro obrázky a velikost
-#ifndef REQUIRED_SIZE
-  #define REQUIRED_SIZE 15000  // 480x800 px / 8
-#endif
+int required_size = 0;
 
 // Pomocná funkce pro streamování dat přímo do displeje
-bool streamToDisplay(const char* url, uint8_t command, bool invert) {
+bool streamToDisplay(const char* url, uint8_t command, bool invert, int requiredSize) {
   if (WiFi.status() != WL_CONNECTED) return false;
 
   WiFiClient client;
@@ -37,7 +33,7 @@ bool streamToDisplay(const char* url, uint8_t command, bool invert) {
       uint8_t buffer[128];
       int totalRead = 0;
 
-      while (http.connected() && totalRead < REQUIRED_SIZE) {
+      while (http.connected() && totalRead < requiredSize) {
         size_t size = stream->available();
         if (size) {
           int c = stream->readBytes(buffer, ((size > sizeof(buffer)) ? sizeof(buffer) : size));
@@ -65,13 +61,13 @@ void vykresliObrazek(const char* urlBlack, const char* urlRed) {
   // 1. Černá data (Registr 0x24)
   // Většinou: 1 = Bílá, 0 = Černá. Zkusíme nejdřív bez inverze (false)
   Serial.println("Posilam cerna data...");
-  streamToDisplay(urlBlack, 0x24, true); 
+  streamToDisplay(urlBlack, 0x24, true, required_size); 
 
   // 2. Červená data (Registr 0x26)
   // Tady je tvůj hlavní problém. Musíme ji invertovat (true), 
   // aby pozadí nebylo červené.
   Serial.println("Posilam cervena data...");
-  streamToDisplay(urlRed, 0x26, false);
+  streamToDisplay(urlRed, 0x26, false, required_size);
 
   // 3. Aktivace refresh
   Serial.println("Refresh...");
@@ -90,8 +86,14 @@ void setup() {
   delay(1000);
 
   WiFiManager wfm;
-  WiFiManagerParameter room_id_box("room_id", "room ID", "", 4);
+  WiFiManagerParameter room_id_box("room_id", "room ID", "20", 4);
   wfm.addParameter(&room_id_box);
+
+  WiFiManagerParameter display_width("display_width", "display width", "400", 4);
+  wfm.addParameter(&display_width);
+
+  WiFiManagerParameter display_height("display_height", "display height", "300", 4);
+  wfm.addParameter(&display_height);
 
   bool res;
     res = wfm.autoConnect("eink_display");
@@ -100,11 +102,16 @@ void setup() {
     }
   
   String roomID = String(room_id_box.getValue());
+  int battery = 50;
   Serial.print("room ID: ");
   Serial.println(roomID);
 
-  url_black_str = "http://192.168.0.188:5000/download/" + roomID + "/black_binary.bin";//"http://10.1.198.124:5000/download/" + roomID + "/black_binary.bin";
-  url_red_str = "http://192.168.0.188:5000/download/" + roomID + "/red_binary.bin";//"http://10.1.198.124:5000/download/" + roomID + "/red_binary.bin";
+  url_black_str = "http://192.168.0.188:5000/download/" + roomID + "/" + battery + "/black_binary.bin";//"http://10.1.198.124:5000/download/" + roomID + "/black_binary.bin";
+  url_red_str = "http://192.168.0.188:5000/download/" + roomID + "/" + battery + "/red_binary.bin";//"http://10.1.198.124:5000/download/" + roomID + "/red_binary.bin";
+
+  int width = atoi(display_width.getValue());
+  int height = atoi(display_height.getValue());
+  required_size = width * height / 8;
 
   // 3. Inicializace HW pinů a SPI
   pinMode(POWER, OUTPUT);
@@ -152,5 +159,5 @@ void loop() {
   }
 
   Serial.println("Cekam 5 minut...");
-  delay(300000);
+  delay(60000);
 }
