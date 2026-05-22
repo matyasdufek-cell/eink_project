@@ -674,8 +674,8 @@ def download(filename, room_id, battery):
 
     # Call create_schedule
     create_schedule(
-        width=400,
-        height=300,
+        width=800,
+        height=480,
         classroom=classroom,
         students_class=current_lesson.get("trida", "?"),
         lesson_start_time=current_lesson["od"],

@@ -45,7 +45,7 @@ def create_schedule(width, height, classroom, students_class, lesson_start_time,
 def wbr_colors(source_image):
     colors = [(255, 255, 255), (0, 0, 0), (255, 0, 0)]
     source = Image.open(source_image)
-    source = source.resize((400, 300), resample = Image.BILINEAR)
+    source = source.resize((800, 480), resample = Image.BILINEAR)
     source = source.convert("RGB")
     width, height = source.size
     new_image = Image.new("RGB", (width, height))
