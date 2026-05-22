@@ -84,7 +84,7 @@ def get_binary_files(source_image):
                 pixel_data.append(int(hex_number, 16))
                 binary_number = ""
     binary_data = bytes(pixel_data)
-    with open("C:/Users/Uživatel/project_MW/uploads/black_binary.bin", "wb") as file_black_binary:
+    with open("uploads/black_binary.bin", "wb") as file_black_binary:
         file_black_binary.write(binary_data)
     pixel_data = []
     binary_number = ""
@@ -104,5 +104,5 @@ def get_binary_files(source_image):
                 pixel_data.append(int(hex_number, 16))
                 binary_number = ""
     binary_data = bytes(pixel_data)
-    with open("C:/Users/Uživatel/project_MW/uploads/red_binary.bin", "wb") as file_red_binary:
+    with open("uploads/red_binary.bin", "wb") as file_red_binary:
         file_red_binary.write(binary_data)
