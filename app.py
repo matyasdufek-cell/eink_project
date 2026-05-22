@@ -48,6 +48,7 @@ def rozvrh(room_id):
     url = f"https://{domain}.edookit.net/api/lesson/v2/list-lessons"
 
     today = date.today().strftime('%Y-%m-%d')
+    test_today = date(2026, 4, 29).strftime('%Y-%m-%d')  # pro testování s fixním datem
     room_id = request.args.get("room_id", room_id)
     full_url = f"{url}?date={today}&room_id={room_id}"
 
@@ -120,26 +121,24 @@ def rozvrh(room_id):
             first = next(iter(rooms.values()))
             return first.get("room_id"), first.get("room_name", "?")
         return None, "?"
-
+    
     def parse_course(node):
-        """Vrátí (trida, kurz) z node.students podle subject_name 'Žáci X - Y'."""
         trida = "?"
         kurz = "?"
         if not isinstance(node, dict):
             return trida, kurz
-        students = node.get("students") or {}
-        if isinstance(students, dict) and students:
-            first_student = next(iter(students.values()))
-            subj_name = first_student.get("subject_name", "")
+        courses = node.get("courses") or {}
+        if isinstance(courses, dict) and courses:
+            first_student = next(iter(courses.values()))
+            subj_name = first_student.get("course_code", "")
             parts = subj_name.split("-")
             if parts:
-                before = parts[0].strip()
-                if before.lower().startswith("žáci "):
-                    trida = before[5:].strip() or trida
+                before = parts[1].strip()
+                if len(before) > 3:
+                    trida = "sem" or trida
                 else:
                     trida = before or trida
-            if len(parts) > 1:
-                kurz = parts[1].strip() or kurz
+            kurz = parts[0].strip() or kurz
         return trida, kurz
 
     # hledané id místnosti (pokud je to číslo)
@@ -302,6 +301,7 @@ def download(filename, room_id, battery):
     url = f"https://{domain}.edookit.net/api/lesson/v2/list-lessons"
 
     today = date.today().strftime('%Y-%m-%d')
+    test_today = date(2026, 4, 29).strftime('%Y-%m-%d')  # pro testování s fixním datem
     room_id = request.args.get("room_id", room_id)
     full_url = f"{url}?date={today}&room_id={room_id}"
 
@@ -546,8 +546,8 @@ def download(filename, room_id, battery):
             )
 
     # seřadit podle plánovaného začátku
-    rozvrh.sort(key=lambda x: x["plan"]["od"])
-    full_rozvrh.sort(key=lambda x: x["plan"]["od"])
+    rozvrh.sort(key=lambda x: x["actual"]["od"])
+    full_rozvrh.sort(key=lambda x: x["actual"]["od"])
 
     for polozka in rozvrh:
         status = polozka["status"]
@@ -586,7 +586,7 @@ def download(filename, room_id, battery):
             and start_minutes <= now_minutes < end_minutes
         )
 
-    test_now = datetime.now()
+    test_now = datetime.now()#.replace(hour=8, minute=0)  # pro testování s fixním časem
     test_now_minutes = test_now.hour * 60 + test_now.minute
     nejblizsi_hodina = None
     nejmensi_rozdil = None
@@ -627,6 +627,7 @@ def download(filename, room_id, battery):
     current_lesson = nejblizsi_hodina if nejblizsi_hodina is not None else rozvrh[0]
 
     # Find next lessons for the rest of the day
+    current_index = rozvrh.index(current_lesson) if current_lesson in rozvrh else 0
     current_index_full = next(
         (
             i
@@ -689,6 +690,8 @@ def download(filename, room_id, battery):
     get_binary_files("schedule_image.png")
 
     return send_from_directory(UPLOAD_FOLDER, filename)
+
+    #return send_file(io.BytesIO(image_bytes), mimetype='image/png', as_attachment=True, download_name='schedule.png')
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
