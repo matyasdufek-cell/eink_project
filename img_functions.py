@@ -14,20 +14,20 @@ def create_schedule(width, height, classroom, students_class, lesson_start_time,
 
     def following_lesson(x, y, time, teacher, subject_abb, students_class, note = ""):
         draw.text((x + 5, y), time, font = small_text, fill = (0, 0, 0))
-        draw.text((x + (width * 3 // 8) - 10, y), teacher, font = small_text, fill = (0, 0, 0))
-        draw.text((x + (width // 2) - 10, y), subject_abb, font = small_text, fill = (0, 0, 0))
-        draw.text((x + (width * 5 // 8), y), students_class, font = small_text, fill = (0, 0, 0))
-        draw.text((x + (width * 3 // 4), y), note, font = small_text, fill = (255, 0, 0))
+        draw.text((x + 140, y), teacher, font = small_text, fill = (0, 0, 0))
+        draw.text((x + 190, y), subject_abb, font = small_text, fill = (0, 0, 0))
+        draw.text((x + 250, y), students_class, font = small_text, fill = (0, 0, 0))
+        draw.text((x + 300, y), note, font = small_text, fill = (255, 0, 0))
         if note == "zrušeno" or note[:8] == "přes. do":
-            draw.line(((x, y + 10), ((width * 3 // 4) - 10, y + 10)), width = 2, fill = (255, 0, 0))
+            draw.line(((x, y + 10), (290, y + 10)), width = 2, fill = (255, 0, 0))
 
     draw.rectangle((0, 0, width, 40), fill = (255, 0, 0))
     draw.text((5, 5), classroom, font = classroom_font, fill = (255, 255, 255))
-    draw.text((75, 5), f"aktuálně: {lesson_start_time} - {lesson_end_time}", font = italic, fill = (255, 255, 255))
+    draw.text((width - 325, 5), f"aktuálně: {lesson_start_time} - {lesson_end_time}", font = italic, fill = (255, 255, 255))
     
     draw.text((5, 40), subject, font = subject_font, fill = (255, 0, 0))
-    draw.text((275, 50), f"třída: {students_class}", font = standart_text, fill = (0, 0, 0))
-    draw.text((275, 80), f"učitel: {teacher}", font = standart_text, fill = (0, 0, 0))
+    draw.text((width - 125, 50), f"třída: {students_class}", font = standart_text, fill = (0, 0, 0))
+    draw.text((width - 125, 80), f"učitel: {teacher}", font = standart_text, fill = (0, 0, 0))
 
     draw.line(((0, 110), (width, 110)), width = 2, fill = (255, 0, 0))
 
