@@ -285,7 +285,7 @@ def rozvrh(room_id):
         test_now=test_now,
     )
 
-@app.route("/download/<room_id>/<battery>/<color>/<height>/<width>", methods=["GET"])
+@app.route("/download/<room_id>/<battery>/<color>/<int:width>/<int:height>", methods=["GET"])
 def download(room_id, battery, color, height, width):
     domain = "gymkren"
     username = "apiuser2"
