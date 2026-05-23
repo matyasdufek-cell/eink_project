@@ -1,7 +1,5 @@
 import os
 from flask import Flask, render_template, jsonify, send_file, send_from_directory, request, send_from_directory
-from PIL import Image, ImageDraw, ImageFont
-import io
 import json
 import requests
 from datetime import datetime, date
@@ -10,9 +8,9 @@ from img_functions import *
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-  
- 
- 
+
+
+
 @app.route("/")
 def home() -> str:
     """Vrátí čistý JSON z API list-lessons pro danou učebnu."""
@@ -48,7 +46,6 @@ def rozvrh(room_id):
     url = f"https://{domain}.edookit.net/api/lesson/v2/list-lessons"
 
     today = date.today().strftime('%Y-%m-%d')
-    test_today = date(2026, 4, 29).strftime('%Y-%m-%d')  # pro testování s fixním datem
     room_id = request.args.get("room_id", room_id)
     full_url = f"{url}?date={today}&room_id={room_id}"
 
@@ -75,7 +72,6 @@ def rozvrh(room_id):
     data = response.json()
     lessons_raw = data.get("lessons", {})
 
-    # lessons může být dict (id -> lesson) nebo list
     if isinstance(lessons_raw, dict):
         lessons_iter = lessons_raw.values()
     else:
@@ -141,7 +137,6 @@ def rozvrh(room_id):
             kurz = parts[0].strip() or kurz
         return trida, kurz
 
-    # hledané id místnosti (pokud je to číslo)
     try:
         searched_room_id = int(room_id)
     except ValueError:
@@ -163,15 +158,12 @@ def rozvrh(room_id):
         mistnost_id_plan, mistnost_plan = parse_room(scheduled)
         mistnost_id_act, mistnost_act = parse_room(actual)
 
-        # třída + kurz zvlášť pro plán i aktuální stav
         trida_plan, kurz_plan = parse_course(scheduled)
         trida_act, kurz_act = parse_course(actual)
 
-        # preferuj plánovanou třídu/kurz, jinak aktuální
         trida = trida_plan if trida_plan != "?" else trida_act
         kurz_top = kurz_plan if kurz_plan != "?" else kurz_act
 
-        # status hodiny
         same_time = od_plan == od_act and do_plan == do_act
         same_room = mistnost_id_plan == mistnost_id_act
 
@@ -224,7 +216,6 @@ def rozvrh(room_id):
             }
         )
 
-    # seřadit podle plánovaného začátku
     rozvrh.sort(key=lambda x: x["plan"]["od"])
 
     for polozka in rozvrh:
@@ -293,15 +284,14 @@ def rozvrh(room_id):
         test_now=test_now,
     )
 
-@app.route("/download/<room_id>/<battery>/<filename>", methods=["GET"])
-def download(filename, room_id, battery):
+@app.route("/download/<room_id>/<battery>/<color>/<height>/<width>", methods=["GET"])
+def download(room_id, battery, color, height, width):
     domain = "gymkren"
     username = "apiuser2"
     password = "4616t5s55x53qpe2jt62yfode14hfxon3uvpdok8"
     url = f"https://{domain}.edookit.net/api/lesson/v2/list-lessons"
 
     today = date.today().strftime('%Y-%m-%d')
-    test_today = date(2026, 4, 29).strftime('%Y-%m-%d')  # pro testování s fixním datem
     room_id = request.args.get("room_id", room_id)
     full_url = f"{url}?date={today}&room_id={room_id}"
 
@@ -328,7 +318,6 @@ def download(filename, room_id, battery):
     data = response.json()
     lessons_raw = data.get("lessons", {})
 
-    # lessons může být dict (id -> lesson) nebo list
     if isinstance(lessons_raw, dict):
         lessons_iter = lessons_raw.values()
     else:
@@ -395,7 +384,6 @@ def download(filename, room_id, battery):
             kurz = parts[0].strip() or kurz
         return trida, kurz
 
-    # hledané id místnosti (pokud je to číslo)
     try:
         searched_room_id = int(room_id)
     except ValueError:
@@ -419,15 +407,12 @@ def download(filename, room_id, battery):
         mistnost_id_plan, mistnost_plan = parse_room(scheduled)
         mistnost_id_act, mistnost_act = parse_room(actual)
 
-        # třída + kurz zvlášť pro plán i aktuální stav
         trida_plan, kurz_plan = parse_course(scheduled)
         trida_act, kurz_act = parse_course(actual)
 
-        # preferuj plánovanou třídu/kurz, jinak aktuální
         trida = trida_plan if trida_plan != "?" else trida_act
         kurz_top = kurz_plan if kurz_plan != "?" else kurz_act
 
-        # status hodiny
         same_time = od_plan == od_act and do_plan == do_act
         same_room = mistnost_id_plan == mistnost_id_act
 
@@ -545,7 +530,6 @@ def download(filename, room_id, battery):
                 }
             )
 
-    # seřadit podle plánovaného začátku
     rozvrh.sort(key=lambda x: x["actual"]["od"])
     full_rozvrh.sort(key=lambda x: x["actual"]["od"])
 
@@ -586,7 +570,7 @@ def download(filename, room_id, battery):
             and start_minutes <= now_minutes < end_minutes
         )
 
-    test_now = datetime.now()#.replace(hour=8, minute=0)  # pro testování s fixním časem
+    test_now = datetime.now()
     test_now_minutes = test_now.hour * 60 + test_now.minute
     nejblizsi_hodina = None
     nejmensi_rozdil = None
@@ -618,15 +602,11 @@ def download(filename, room_id, battery):
             konec_vyuky_minutes = end_minutes
             konec_vyuky = end_time
 
-    # Now create the image
     if not rozvrh:
-        # If no lessons, return empty image or error
         return "No lessons found", 404
 
-    # Find current lesson (nejblizsi_hodina) or first lesson
     current_lesson = nejblizsi_hodina if nejblizsi_hodina is not None else rozvrh[0]
 
-    # Find next lessons for the rest of the day
     current_index = rozvrh.index(current_lesson) if current_lesson in rozvrh else 0
     current_index_full = next(
         (
@@ -656,7 +636,6 @@ def download(filename, room_id, battery):
     except TypeError:
         next_lessons = []
 
-    # Prepare list_next_lessons for all following lessons
     list_next_lessons = [
         [
             lesson["od"],
@@ -669,13 +648,11 @@ def download(filename, room_id, battery):
         for lesson in next_lessons
     ]
 
-    # Classroom name
     classroom = current_lesson.get("actual", {}).get("mistnost", room_id) or room_id
 
-    # Call create_schedule
     create_schedule(
-        width=400,
-        height=300,
+        width=width,
+        height=height,
         classroom=classroom,
         students_class=current_lesson.get("trida", "?"),
         lesson_start_time=current_lesson["od"],
@@ -687,11 +664,11 @@ def download(filename, room_id, battery):
         list_next_lessons=list_next_lessons
     )
     wbr_colors("schedule_image.png")
-    get_binary_files("schedule_image.png")
+    get_binary_files("schedule_image.png", room_id)
+
+    filename = f"{color}_binary{room_id}.bin"
 
     return send_from_directory(UPLOAD_FOLDER, filename)
-
-    #return send_file(io.BytesIO(image_bytes), mimetype='image/png', as_attachment=True, download_name='schedule.png')
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)

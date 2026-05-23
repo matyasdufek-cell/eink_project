@@ -62,7 +62,7 @@ def wbr_colors(source_image):
             new_image.putpixel((i, j), new_pixel_color)
     new_image.save("schedule_image.png")
 
-def get_binary_files(source_image):
+def get_binary_files(source_image, room_id):
     source = Image.open(source_image)
     source = source.convert("RGB")
     width, height = source.size
@@ -84,7 +84,7 @@ def get_binary_files(source_image):
                 pixel_data.append(int(hex_number, 16))
                 binary_number = ""
     binary_data = bytes(pixel_data)
-    with open("C:/Users/Uživatel/project_MW/uploads/black_binary.bin", "wb") as file_black_binary:
+    with open(f"uploads/black_binary{room_id}.bin", "wb") as file_black_binary:
         file_black_binary.write(binary_data)
     pixel_data = []
     binary_number = ""
@@ -104,5 +104,5 @@ def get_binary_files(source_image):
                 pixel_data.append(int(hex_number, 16))
                 binary_number = ""
     binary_data = bytes(pixel_data)
-    with open("C:/Users/Uživatel/project_MW/uploads/red_binary.bin", "wb") as file_red_binary:
+    with open(f"uploads/red_binary{room_id}.bin", "wb") as file_red_binary:
         file_red_binary.write(binary_data)
